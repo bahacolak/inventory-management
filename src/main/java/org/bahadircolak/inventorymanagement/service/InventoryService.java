@@ -1,0 +1,94 @@
+package org.bahadircolak.inventorymanagement.service;
+
+import org.bahadircolak.inventorymanagement.model.InventoryItem;
+import org.bahadircolak.inventorymanagement.repository.CategoryRepository;
+import org.bahadircolak.inventorymanagement.repository.InventoryItemRepository;
+import org.bahadircolak.inventorymanagement.web.request.InventoryItemRequest;
+import org.bahadircolak.inventorymanagement.web.response.InventoryItemResponse;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class InventoryService {
+
+    private final InventoryItemRepository itemRepository;
+    private final CategoryRepository categoryRepository;
+
+    public InventoryService(InventoryItemRepository itemRepository, CategoryRepository categoryRepository) {
+        this.itemRepository = itemRepository;
+        this.categoryRepository = categoryRepository;
+    }
+
+    @Transactional
+    public InventoryItemResponse addItem(InventoryItemRequest itemRequest) {
+        InventoryItem item = new InventoryItem();
+        item.setName(itemRequest.getName());
+        item.setQuantity(itemRequest.getQuantity());
+        item.setPrice(itemRequest.getPrice());
+        item.setCategory(categoryRepository.findById(itemRequest.getCategoryId())
+                .orElseThrow(() -> new RuntimeException("Category not found")));
+
+        InventoryItem newItem = itemRepository.save(item);
+        return mapToInventoryItemResponse(newItem);
+    }
+
+    public List<InventoryItemResponse> getAllItems() {
+        return itemRepository.findAll().stream()
+                .map(this::mapToInventoryItemResponse)
+                .collect(Collectors.toList());
+    }
+
+    public InventoryItemResponse getItemById(Long id) {
+        InventoryItem item = itemRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Item not found"));
+        return mapToInventoryItemResponse(item);
+    }
+
+    @Transactional
+    public InventoryItemResponse updateItem(Long id, InventoryItemRequest itemRequest) {
+        InventoryItem item = itemRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Item not found"));
+        item.setName(itemRequest.getName());
+        item.setQuantity(itemRequest.getQuantity());
+        item.setPrice(itemRequest.getPrice());
+        item.setCategory(categoryRepository.findById(itemRequest.getCategoryId())
+                .orElseThrow(() -> new RuntimeException("Category not found")));
+
+        InventoryItem updatedItem = itemRepository.save(item);
+        return mapToInventoryItemResponse(updatedItem);
+    }
+
+    @Transactional
+    public void deleteItem(Long id) {
+        itemRepository.deleteById(id);
+    }
+
+    public double calculateTotalValue() {
+        return itemRepository.findAll().stream()
+                .mapToDouble(item -> item.getQuantity() * item.getPrice())
+                .sum();
+    }
+
+    public List<InventoryItemResponse> applyDiscount(double discountPercentage) {
+        List<InventoryItem> items = itemRepository.findAll();
+        for (InventoryItem item : items) {
+            double newPrice = item.getPrice() * (1 - discountPercentage / 100);
+            item.setPrice(newPrice);
+        }
+        itemRepository.saveAll(items);
+        return items.stream().map(this::mapToInventoryItemResponse).collect(Collectors.toList());
+    }
+
+    private InventoryItemResponse mapToInventoryItemResponse(InventoryItem item) {
+        InventoryItemResponse response = new InventoryItemResponse();
+        response.setId(item.getId());
+        response.setName(item.getName());
+        response.setQuantity(item.getQuantity());
+        response.setPrice(item.getPrice());
+        response.setCategoryName(item.getCategory().getName());
+        return response;
+    }
+}
