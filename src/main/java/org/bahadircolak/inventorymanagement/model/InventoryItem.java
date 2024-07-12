@@ -22,4 +22,7 @@ public class InventoryItem {
 
     @ManyToOne
     private Category category;
+
+    @ManyToOne
+    private User user;
 }

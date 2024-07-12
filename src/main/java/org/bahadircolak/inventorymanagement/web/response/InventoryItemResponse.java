@@ -11,5 +11,6 @@ public class InventoryItemResponse {
     private int quantity;
     private double price;
     private String categoryName;
+    private String userName;
 }
 

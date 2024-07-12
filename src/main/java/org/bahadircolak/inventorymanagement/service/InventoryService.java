@@ -3,6 +3,7 @@ package org.bahadircolak.inventorymanagement.service;
 import org.bahadircolak.inventorymanagement.model.InventoryItem;
 import org.bahadircolak.inventorymanagement.repository.CategoryRepository;
 import org.bahadircolak.inventorymanagement.repository.InventoryItemRepository;
+import org.bahadircolak.inventorymanagement.repository.UserRepository;
 import org.bahadircolak.inventorymanagement.web.request.InventoryItemRequest;
 import org.bahadircolak.inventorymanagement.web.response.InventoryItemResponse;
 import org.springframework.stereotype.Service;
@@ -14,13 +15,16 @@ import java.util.stream.Collectors;
 @Service
 public class InventoryService {
 
-    private final InventoryItemRepository itemRepository;
     private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
+    private final InventoryItemRepository itemRepository;
 
-    public InventoryService(InventoryItemRepository itemRepository, CategoryRepository categoryRepository) {
-        this.itemRepository = itemRepository;
+    public InventoryService(CategoryRepository categoryRepository, UserRepository userRepository, InventoryItemRepository itemRepository) {
         this.categoryRepository = categoryRepository;
+        this.userRepository = userRepository;
+        this.itemRepository = itemRepository;
     }
+
 
     @Transactional
     public InventoryItemResponse addItem(InventoryItemRequest itemRequest) {
@@ -30,6 +34,8 @@ public class InventoryService {
         item.setPrice(itemRequest.getPrice());
         item.setCategory(categoryRepository.findById(itemRequest.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Category not found")));
+        item.setUser(userRepository.findById(itemRequest.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"))); // Eklendi
 
         InventoryItem newItem = itemRepository.save(item);
         return mapToInventoryItemResponse(newItem);
@@ -56,6 +62,8 @@ public class InventoryService {
         item.setPrice(itemRequest.getPrice());
         item.setCategory(categoryRepository.findById(itemRequest.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Category not found")));
+        item.setUser(userRepository.findById(itemRequest.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found")));
 
         InventoryItem updatedItem = itemRepository.save(item);
         return mapToInventoryItemResponse(updatedItem);
@@ -82,13 +90,14 @@ public class InventoryService {
         return items.stream().map(this::mapToInventoryItemResponse).collect(Collectors.toList());
     }
 
-    private InventoryItemResponse mapToInventoryItemResponse(InventoryItem item) {
+    public InventoryItemResponse mapToInventoryItemResponse(InventoryItem item) {
         InventoryItemResponse response = new InventoryItemResponse();
         response.setId(item.getId());
         response.setName(item.getName());
         response.setQuantity(item.getQuantity());
         response.setPrice(item.getPrice());
         response.setCategoryName(item.getCategory().getName());
+        response.setUserName(item.getUser().getFirstName() + " " + item.getUser().getLastName()); // Eklendi
         return response;
     }
 }

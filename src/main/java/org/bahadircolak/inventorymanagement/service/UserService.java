@@ -1,5 +1,6 @@
 package org.bahadircolak.inventorymanagement.service;
 
+import jakarta.transaction.Transactional;
 import org.bahadircolak.inventorymanagement.config.JwtService;
 import org.bahadircolak.inventorymanagement.config.PasswordEncoderService;
 import org.bahadircolak.inventorymanagement.model.Role;
@@ -12,6 +13,7 @@ import org.bahadircolak.inventorymanagement.web.request.AuthenticationRequest;
 import org.bahadircolak.inventorymanagement.web.request.RegisterRequest;
 import org.bahadircolak.inventorymanagement.web.request.UpdateUserRequest;
 import org.bahadircolak.inventorymanagement.web.response.AuthenticationResponse;
+import org.bahadircolak.inventorymanagement.web.response.InventoryItemResponse;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -26,18 +29,20 @@ public class UserService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final PasswordEncoderService passwordEncoderService;
+    private final InventoryService inventoryService;
 
-    public UserService(UserRepository userRepository, JwtService jwtService, PasswordEncoderService passwordEncoderService) {
+    public UserService(UserRepository userRepository, JwtService jwtService, PasswordEncoderService passwordEncoderService, InventoryService inventoryService) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.passwordEncoderService = passwordEncoderService;
+        this.inventoryService = inventoryService;
     }
 
     public List<UserDto> getAllUsers() {
         List<User> users = userRepository.findAll();
         List<UserDto> userDtoList = new ArrayList<>();
 
-        for (User user : users){
+        for (User user : users) {
             UserDto userDto = new UserDto();
             userDto.setId(user.getId());
             userDto.setFirstName(user.getFirstName());
@@ -60,9 +65,7 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
     }
 
-
     public AuthenticationResponse register(RegisterRequest request) {
-
         if (doesUserExist(request.getEmail())) {
             throw new UserConflictException("User with email: " + request.getEmail() + " already exists!");
         }
@@ -108,17 +111,14 @@ public class UserService {
     public UserDto updateUser(Long id, UpdateUserRequest request) {
         Optional<User> existingUserOptional = userRepository.findById(id);
 
-        if (existingUserOptional.isPresent()){
+        if (existingUserOptional.isPresent()) {
             User existingUser = existingUserOptional.get();
-
             existingUser.setFirstName(request.getFirstName());
             existingUser.setLastName(request.getLastName());
             existingUser.setEmail(request.getEmail());
-
             existingUser = userRepository.save(existingUser);
 
             UserDto updatedUserDto = new UserDto();
-
             updatedUserDto.setId(existingUser.getId());
             updatedUserDto.setFirstName(existingUser.getFirstName());
             updatedUserDto.setLastName(existingUser.getLastName());
@@ -137,5 +137,15 @@ public class UserService {
         } else {
             throw new UserNotFoundException("User not found with id: " + id);
         }
+    }
+
+    @Transactional
+    public List<InventoryItemResponse> getUserInventory(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+
+        return user.getItems().stream()
+                .map(inventoryService::mapToInventoryItemResponse)
+                .collect(Collectors.toList());
     }
 }

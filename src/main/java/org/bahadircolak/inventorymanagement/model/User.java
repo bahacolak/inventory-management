@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 @Entity(name = "users")
 @Getter
@@ -25,6 +26,9 @@ public class User implements UserDetails {
     private String password;
     private String email;
     private String salt;
+
+    @OneToMany(mappedBy = "user")
+    private Set<InventoryItem> items;
 
     @Enumerated(EnumType.STRING)
     private Role role;

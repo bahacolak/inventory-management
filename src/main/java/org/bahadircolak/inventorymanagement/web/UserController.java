@@ -6,15 +6,14 @@ import org.bahadircolak.inventorymanagement.web.request.AuthenticationRequest;
 import org.bahadircolak.inventorymanagement.web.request.RegisterRequest;
 import org.bahadircolak.inventorymanagement.web.request.UpdateUserRequest;
 import org.bahadircolak.inventorymanagement.web.response.AuthenticationResponse;
-import org.springframework.http.HttpStatus;
+import org.bahadircolak.inventorymanagement.web.response.InventoryItemResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/api/v1/users")
 public class UserController {
 
     private final UserService userService;
@@ -22,36 +21,46 @@ public class UserController {
     public UserController(UserService userService) {
         this.userService = userService;
     }
+
     @GetMapping
-    public List<UserDto> getAllUsers(){
-        return userService.getAllUsers();
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        List<UserDto> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         UserDto user = userService.getUserById(id);
-        return new ResponseEntity<>(user, HttpStatus.OK);
+        return ResponseEntity.ok(user);
+    }
+
+    @GetMapping("/{id}/inventory")
+    public ResponseEntity<List<InventoryItemResponse>> getUserInventory(@PathVariable Long id) {
+        List<InventoryItemResponse> inventory = userService.getUserInventory(id);
+        return ResponseEntity.ok(inventory);
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthenticationResponse> register(@RequestBody RegisterRequest request){
-        return ResponseEntity.ok(userService.register(request));
+    public ResponseEntity<AuthenticationResponse> register(@RequestBody RegisterRequest request) {
+        AuthenticationResponse response = userService.register(request);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/authenticate")
-    public ResponseEntity<AuthenticationResponse> login(@RequestBody AuthenticationRequest request){
-        return ResponseEntity.ok(userService.login(request));
+    public ResponseEntity<AuthenticationResponse> login(@RequestBody AuthenticationRequest request) {
+        AuthenticationResponse response = userService.login(request);
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserDto> updateUser(@Valid @PathVariable Long id, @Valid @RequestBody UpdateUserRequest request){
+    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UpdateUserRequest request) {
         UserDto updatedUser = userService.updateUser(id, request);
-        return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+        return ResponseEntity.ok(updatedUser);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public void deleteUser(@PathVariable Long id){
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
     }
-
 }

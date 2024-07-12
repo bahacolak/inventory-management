@@ -10,5 +10,6 @@ public class InventoryItemRequest {
     private int quantity;
     private double price;
     private Long categoryId;
+    private Long userId;
 }
 
