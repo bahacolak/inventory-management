@@ -5,6 +5,7 @@ import org.bahadircolak.inventorymanagement.config.JwtService;
 import org.bahadircolak.inventorymanagement.config.PasswordEncoderService;
 import org.bahadircolak.inventorymanagement.model.Role;
 import org.bahadircolak.inventorymanagement.model.User;
+import org.bahadircolak.inventorymanagement.repository.InventoryItemRepository;
 import org.bahadircolak.inventorymanagement.repository.UserRepository;
 import org.bahadircolak.inventorymanagement.web.advice.exception.UserConflictException;
 import org.bahadircolak.inventorymanagement.web.advice.exception.UserNotFoundException;
@@ -30,12 +31,14 @@ public class UserService {
     private final JwtService jwtService;
     private final PasswordEncoderService passwordEncoderService;
     private final InventoryService inventoryService;
+    private final InventoryItemRepository itemRepository;
 
-    public UserService(UserRepository userRepository, JwtService jwtService, PasswordEncoderService passwordEncoderService, InventoryService inventoryService) {
+    public UserService(UserRepository userRepository, JwtService jwtService, PasswordEncoderService passwordEncoderService, InventoryService inventoryService, InventoryItemRepository itemRepository) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.passwordEncoderService = passwordEncoderService;
         this.inventoryService = inventoryService;
+        this.itemRepository = itemRepository;
     }
 
     public List<UserDto> getAllUsers() {
@@ -147,5 +150,15 @@ public class UserService {
         return user.getItems().stream()
                 .map(inventoryService::mapToInventoryItemResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public double calculateTotalInventoryValue(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+
+        return user.getItems().stream()
+                .mapToDouble(item -> item.getQuantity() * item.getPrice())
+                .sum();
     }
 }

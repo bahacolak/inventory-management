@@ -1,5 +1,6 @@
 package org.bahadircolak.inventorymanagement.web;
 
+import org.bahadircolak.inventorymanagement.service.InventoryService;
 import org.bahadircolak.inventorymanagement.service.UserService;
 import org.bahadircolak.inventorymanagement.web.dto.UserDto;
 import org.bahadircolak.inventorymanagement.web.request.AuthenticationRequest;
@@ -17,9 +18,11 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final InventoryService inventoryService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, InventoryService inventoryService) {
         this.userService = userService;
+        this.inventoryService = inventoryService;
     }
 
     @GetMapping
@@ -61,6 +64,18 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/inventory/total-value")
+    public ResponseEntity<Double> getTotalInventoryValue(@PathVariable Long id) {
+        double totalValue = userService.calculateTotalInventoryValue(id);
+        return ResponseEntity.ok(totalValue);
+    }
+
+    @PutMapping("/{id}/inventory/apply-discount")
+    public ResponseEntity<Void> applyDiscountToInventory(@PathVariable Long id, @RequestParam double discountPercentage) {
+        inventoryService.applyDiscount(id, discountPercentage);
         return ResponseEntity.noContent().build();
     }
 }
