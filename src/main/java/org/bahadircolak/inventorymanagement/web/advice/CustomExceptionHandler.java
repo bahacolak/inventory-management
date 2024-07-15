@@ -1,6 +1,5 @@
 package org.bahadircolak.inventorymanagement.web.advice;
 
-import org.bahadircolak.inventorymanagement.web.advice.exception.BookNotFoundException;
 import org.bahadircolak.inventorymanagement.web.advice.exception.UserConflictException;
 import org.bahadircolak.inventorymanagement.web.advice.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -24,13 +23,6 @@ public class CustomExceptionHandler {
             map.put(fieldError.getField(), fieldError.getDefaultMessage());
         });
         return map;
-    }
-
-    @ExceptionHandler(BookNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleBookNotFoundException(BookNotFoundException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("message", ex.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(UserNotFoundException.class)
